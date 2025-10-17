@@ -23,7 +23,7 @@ import { UploadZone } from "@/components/upload-zone";
 import { AnalysisResults } from "@/components/analysis-results";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
-import { analysisRequestSchema, type AnalysisResult, type AnalysisRequest } from "@shared/schema";
+import { analysisRequestSchema, type AnalysisResult, type AnalysisRequest, type ConversationTurn } from "@shared/schema";
 
 interface SavedAnalysis {
   id: string;
@@ -41,6 +41,8 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<'single' | 'compare'>('single');
   const [currentDescription, setCurrentDescription] = useState<string>("");
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState<ConversationTurn[]>([]);
+  const [followUpAnswers, setFollowUpAnswers] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -52,7 +54,7 @@ export default function Home() {
   });
 
   const analyzeMutation = useMutation({
-    mutationFn: async (data: AnalysisRequest) => {
+    mutationFn: async (data: AnalysisRequest & { conversationHistory?: ConversationTurn[] }) => {
       if (!selectedFile) {
         throw new Error("Please upload an image");
       }
@@ -60,6 +62,10 @@ export default function Home() {
       const formData = new FormData();
       formData.append("image", selectedFile);
       formData.append("description", data.description);
+      
+      if (data.conversationHistory && data.conversationHistory.length > 0) {
+        formData.append("conversationHistory", JSON.stringify(data.conversationHistory));
+      }
 
       const response = await fetch("/api/analyze", {
         method: "POST",
@@ -75,8 +81,13 @@ export default function Home() {
     },
     onSuccess: (data: AnalysisResult) => {
       setResult(data);
-      if (selectedFile) {
+      if (selectedFile && !originalImageUrl) {
         setOriginalImageUrl(URL.createObjectURL(selectedFile));
+      }
+      if (data.clarifyingQuestions && data.clarifyingQuestions.length > 0) {
+        setFollowUpAnswers(new Array(data.clarifyingQuestions.length).fill(""));
+      } else {
+        setFollowUpAnswers([]);
       }
     },
     onError: (error: Error) => {
@@ -99,7 +110,36 @@ export default function Home() {
     }
 
     setCurrentDescription(data.description);
-    analyzeMutation.mutate(data);
+    analyzeMutation.mutate({
+      ...data,
+      conversationHistory: conversationHistory.length > 0 ? conversationHistory : undefined,
+    });
+  };
+
+  const submitFollowUpAnswers = () => {
+    if (!result?.clarifyingQuestions) return;
+
+    const allAnswered = followUpAnswers.every(answer => answer.trim().length > 0);
+    if (!allAnswered) {
+      toast({
+        title: "Missing answers",
+        description: "Please answer all questions before refining",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newTurns: ConversationTurn[] = result.clarifyingQuestions.map((question, index) => ({
+      question,
+      answer: followUpAnswers[index],
+    }));
+
+    setConversationHistory([...conversationHistory, ...newTurns]);
+    
+    analyzeMutation.mutate({
+      description: currentDescription,
+      conversationHistory: [...conversationHistory, ...newTurns],
+    });
   };
 
   const saveToComparison = () => {
@@ -187,6 +227,8 @@ export default function Home() {
     form.reset();
     setResult(null);
     setOriginalImageUrl(null);
+    setConversationHistory([]);
+    setFollowUpAnswers([]);
   };
 
   useEffect(() => {
@@ -422,6 +464,73 @@ export default function Home() {
             </div>
             {originalImageUrl && (
               <AnalysisResults result={result} originalImage={originalImageUrl} />
+            )}
+
+            {conversationHistory.length > 0 && (
+              <div className="mt-8 p-6 border border-border rounded-lg bg-card">
+                <h3 className="text-lg font-semibold text-foreground mb-4" data-testid="text-conversation-history-title">
+                  Conversation History
+                </h3>
+                <div className="space-y-3">
+                  {conversationHistory.map((turn, idx) => (
+                    <div key={idx} className="space-y-2 p-3 bg-muted rounded-md" data-testid={`conversation-turn-${idx}`}>
+                      <p className="text-sm font-medium text-foreground">Q: {turn.question}</p>
+                      <p className="text-sm text-muted-foreground">A: {turn.answer}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {result?.clarifyingQuestions && result.clarifyingQuestions.length > 0 && (
+              <div className="mt-8 p-6 border border-border rounded-lg bg-card">
+                <h3 className="text-lg font-semibold text-foreground mb-4" data-testid="text-follow-up-title">
+                  Refine Your Results
+                </h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Answer these questions to get more precise placement suggestions:
+                </p>
+
+                <div className="space-y-4">
+                  {result.clarifyingQuestions.map((question, index) => (
+                    <div key={index} className="space-y-2">
+                      <label className="text-sm font-medium text-foreground" data-testid={`label-question-${index}`}>
+                        {index + 1}. {question}
+                      </label>
+                      <Textarea
+                        value={followUpAnswers[index] || ""}
+                        onChange={(e) => {
+                          const newAnswers = [...followUpAnswers];
+                          newAnswers[index] = e.target.value;
+                          setFollowUpAnswers(newAnswers);
+                        }}
+                        placeholder="Type your answer here..."
+                        className="min-h-20 resize-none"
+                        data-testid={`textarea-answer-${index}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={submitFollowUpAnswers}
+                  disabled={analyzeMutation.isPending || followUpAnswers.some(a => !a.trim())}
+                  className="w-full mt-6"
+                  data-testid="button-submit-follow-up"
+                >
+                  {analyzeMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Refining suggestions...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Refine Suggestions
+                    </>
+                  )}
+                </Button>
+              </div>
             )}
           </div>
         ) : (

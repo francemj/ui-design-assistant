@@ -35,6 +35,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Description is required" });
       }
 
+      const conversationHistory = req.body.conversationHistory 
+        ? JSON.parse(req.body.conversationHistory) 
+        : [];
+
       const base64Image = req.file.buffer.toString("base64");
       const mimeType = req.file.mimetype;
 
@@ -63,33 +67,53 @@ Respond ONLY with a valid JSON object in this exact format:
 
 Important: Return ONLY the JSON object, no additional text or markdown formatting.`;
 
-      const userPrompt = `I want to add the following to this UI: ${description}
+      let userPrompt = `I want to add the following to this UI: ${description}
 
 Please analyze the layout and suggest the best placement options.`;
 
+      const messages: any[] = [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: userPrompt,
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:${mimeType};base64,${base64Image}`,
+              },
+            },
+          ],
+        },
+      ];
+
+      if (conversationHistory && conversationHistory.length > 0) {
+        for (const turn of conversationHistory) {
+          messages.push({
+            role: "assistant",
+            content: `I have a clarifying question: ${turn.question}`,
+          });
+          messages.push({
+            role: "user",
+            content: `Answer: ${turn.answer}`,
+          });
+        }
+        
+        messages.push({
+          role: "user",
+          content: "Based on my answers to your questions, please provide updated placement suggestions.",
+        });
+      }
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: userPrompt,
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${mimeType};base64,${base64Image}`,
-                },
-              },
-            ],
-          },
-        ],
+        messages,
         max_tokens: 1500,
         temperature: 0.7,
       });

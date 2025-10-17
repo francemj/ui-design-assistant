@@ -101,18 +101,41 @@ Please analyze the layout and suggest the best placement options.`;
 
       let parsedContent;
       try {
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[0] : content;
+        let jsonString = content.trim();
+        
+        if (jsonString.startsWith("```")) {
+          const jsonMatch = jsonString.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+          if (jsonMatch) {
+            jsonString = jsonMatch[1];
+          }
+        } else {
+          const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            jsonString = jsonMatch[0];
+          }
+        }
+        
         parsedContent = JSON.parse(jsonString);
       } catch (parseError) {
-        console.error("Failed to parse AI response:", content);
+        console.error("JSON parsing failed for AI response:", content);
+        console.error("Parse error:", parseError);
         return res.status(500).json({ 
-          message: "Failed to parse AI response",
+          message: "Failed to parse AI response as JSON",
           details: content 
         });
       }
 
-      const validatedResult = analysisResultSchema.parse(parsedContent);
+      let validatedResult;
+      try {
+        validatedResult = analysisResultSchema.parse(parsedContent);
+      } catch (validationError) {
+        console.error("Zod validation failed:", validationError);
+        console.error("Parsed content:", JSON.stringify(parsedContent, null, 2));
+        return res.status(500).json({ 
+          message: "AI response did not match expected schema",
+          details: validationError 
+        });
+      }
 
       res.json(validatedResult);
     } catch (error) {

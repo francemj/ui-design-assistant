@@ -148,3 +148,23 @@ All features use session/client-side state only (no database persistence per use
   - Backend sends conversation context with follow-up requests
   - Multi-turn refinement supported (AI can ask multiple rounds of questions)
   - State cleanup prevents stale answers between analyses
+
+### January 2025 - Visual Markup Overlay System
+- **Interactive Visual Placement Indicators**:
+  - GPT-4o vision model returns bounding box coordinates (x, y, width, height as percentages)
+  - SVG overlay renders color-coded boxes directly on uploaded images
+  - Numbered badges (1, 2, 3, 4+) in distinct colors (blue, purple, pink, green cycling)
+  - Responsive to image size changes and window resize events
+  
+- **Bidirectional Hover Synchronization**:
+  - Hovering placement cards highlights corresponding boxes on image
+  - Hovering boxes on image highlights corresponding placement cards
+  - Active state styling: bolder stroke, higher opacity for visual feedback
+  - Graceful degradation when coordinates are missing
+  
+- **Technical Implementation**:
+  - Percentage-based coordinate system for resolution independence
+  - Real-time pixel calculation based on actual image dimensions
+  - Semi-transparent fills with stroke borders for visibility on various backgrounds
+  - Positioned badges at top-left corner of each bounding box
+  - Warning alerts when AI doesn't provide coordinates

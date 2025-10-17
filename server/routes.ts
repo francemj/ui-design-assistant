@@ -39,8 +39,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? JSON.parse(req.body.conversationHistory) 
         : [];
 
+      // Validate buffer exists and has content
+      if (!req.file.buffer || req.file.buffer.length === 0) {
+        console.error("Empty buffer received for image upload");
+        return res.status(400).json({ message: "Invalid image data - empty buffer" });
+      }
+
+      console.log(`Processing image: ${req.file.originalname}, size: ${req.file.buffer.length} bytes, type: ${req.file.mimetype}`);
+
       const base64Image = req.file.buffer.toString("base64");
       const mimeType = req.file.mimetype;
+
+      // Log first 100 chars of base64 to verify conversion
+      console.log(`Base64 preview (first 100 chars): ${base64Image.substring(0, 100)}...`);
 
       const systemPrompt = `You are a UI/UX expert analyzing layouts and suggesting optimal placements for new UI elements.
 
@@ -127,15 +138,22 @@ Please analyze the layout and suggest the best placement options.`;
         });
       }
 
+      // Using Replit AI Integrations - using minimal parameters to avoid proxy issues
+      console.log("Sending request to GPT-4o with", messages.length, "messages");
+      
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages,
         max_tokens: 1500,
-        temperature: 0.7,
       });
 
+      console.log("GPT-5 response received:", JSON.stringify(response, null, 2));
+
       const content = response.choices[0]?.message?.content;
+      console.log("Extracted content:", content);
+      
       if (!content) {
+        console.error("No content in response. Full response:", JSON.stringify(response));
         return res.status(500).json({ message: "No response from AI" });
       }
 

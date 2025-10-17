@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, forwardRef } from "react";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -8,7 +8,8 @@ interface UploadZoneProps {
   onClear: () => void;
 }
 
-export function UploadZone({ onFileSelect, selectedFile, onClear }: UploadZoneProps) {
+export const UploadZone = forwardRef<HTMLInputElement, UploadZoneProps>(
+  ({ onFileSelect, selectedFile, onClear }, ref) => {
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -106,6 +107,7 @@ export function UploadZone({ onFileSelect, selectedFile, onClear }: UploadZonePr
           Supports PNG and JPG images
         </p>
         <input
+          ref={ref}
           type="file"
           className="hidden"
           accept="image/png,image/jpeg"
@@ -115,4 +117,6 @@ export function UploadZone({ onFileSelect, selectedFile, onClear }: UploadZonePr
       </label>
     </div>
   );
-}
+});
+
+UploadZone.displayName = "UploadZone";

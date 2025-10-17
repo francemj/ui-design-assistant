@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles, GitCompare, X, Download, FileJson, FileText } from "lucide-react";
+import { Loader2, Sparkles, GitCompare, X, Download, FileJson, FileText, Keyboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +12,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { UploadZone } from "@/components/upload-zone";
 import { AnalysisResults } from "@/components/analysis-results";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -33,6 +40,8 @@ export default function Home() {
   const [savedAnalyses, setSavedAnalyses] = useState<SavedAnalysis[]>([]);
   const [viewMode, setViewMode] = useState<'single' | 'compare'>('single');
   const [currentDescription, setCurrentDescription] = useState<string>("");
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const form = useForm<AnalysisRequest>({
@@ -180,6 +189,47 @@ export default function Home() {
     setOriginalImageUrl(null);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '?' && !showKeyboardHelp) {
+        e.preventDefault();
+        setShowKeyboardHelp(true);
+        return;
+      }
+
+      if (e.key === 'Escape' && showKeyboardHelp) {
+        setShowKeyboardHelp(false);
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && selectedFile && !result) {
+        e.preventDefault();
+        form.handleSubmit(onSubmit)();
+        return;
+      }
+
+      const target = e.target as HTMLElement;
+      const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+
+      if (isInputField && e.key !== 'Escape') {
+        return;
+      }
+
+      if ((e.key === 'u' || e.key === 'U') && !result) {
+        e.preventDefault();
+        fileInputRef.current?.click();
+      }
+
+      if (e.key === 'Enter' && selectedFile && !result && !isInputField) {
+        e.preventDefault();
+        form.handleSubmit(onSubmit)();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedFile, result, form, showKeyboardHelp, onSubmit]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
@@ -187,9 +237,61 @@ export default function Home() {
           <h1 className="text-lg font-semibold text-foreground" data-testid="text-app-title">
             UI Placement Assistant
           </h1>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowKeyboardHelp(true)}
+              data-testid="button-keyboard-shortcuts"
+              aria-label="Keyboard shortcuts"
+            >
+              <Keyboard className="h-4 w-4" />
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
+
+      <Dialog open={showKeyboardHelp} onOpenChange={setShowKeyboardHelp}>
+        <DialogContent data-testid="dialog-keyboard-help">
+          <DialogHeader>
+            <DialogTitle>Keyboard Shortcuts</DialogTitle>
+            <DialogDescription>
+              Use these shortcuts to navigate faster
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div>
+                  <kbd className="px-2 py-1 text-xs font-semibold border border-border rounded bg-muted">U</kbd>
+                  <p className="text-sm text-muted-foreground mt-1">Upload image</p>
+                </div>
+                <div>
+                  <kbd className="px-2 py-1 text-xs font-semibold border border-border rounded bg-muted">Enter</kbd>
+                  <p className="text-sm text-muted-foreground mt-1">Analyze layout</p>
+                </div>
+                <div>
+                  <kbd className="px-2 py-1 text-xs font-semibold border border-border rounded bg-muted">Cmd/Ctrl</kbd>
+                  {' + '}
+                  <kbd className="px-2 py-1 text-xs font-semibold border border-border rounded bg-muted">Enter</kbd>
+                  <p className="text-sm text-muted-foreground mt-1">Analyze from anywhere</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <kbd className="px-2 py-1 text-xs font-semibold border border-border rounded bg-muted">?</kbd>
+                  <p className="text-sm text-muted-foreground mt-1">Show this help</p>
+                </div>
+                <div>
+                  <kbd className="px-2 py-1 text-xs font-semibold border border-border rounded bg-muted">Esc</kbd>
+                  <p className="text-sm text-muted-foreground mt-1">Close dialogs</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
         {!result ? (
@@ -214,6 +316,7 @@ export default function Home() {
                     UI Screenshot
                   </FormLabel>
                   <UploadZone
+                    ref={fileInputRef}
                     onFileSelect={setSelectedFile}
                     selectedFile={selectedFile}
                     onClear={() => setSelectedFile(null)}

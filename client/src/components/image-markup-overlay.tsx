@@ -68,7 +68,7 @@ export function ImageMarkupOverlay({
       
       {imageDimensions.width > 0 && placementsWithCoordinates.length > 0 && (
         <svg
-          className="absolute top-0 left-0 w-full h-full pointer-events-none"
+          className="absolute top-0 left-0 w-full h-full"
           viewBox={`0 0 ${imageDimensions.width} ${imageDimensions.height}`}
           data-testid="svg-markup-overlay"
         >

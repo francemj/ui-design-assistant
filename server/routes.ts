@@ -51,7 +51,6 @@ When analyzing a UI screenshot and a user's request to add a new element:
    - The specific region/location (e.g., "top-right toolbar", "below the main form")
    - A clear rationale explaining why this placement works well
 4. If you need more context to give better suggestions, list 1-3 clarifying questions
-5. If possible, you can also provide a marked-up version of the image showing the suggested placement (optional)
 
 Respond ONLY with a valid JSON object in this exact format:
 {
@@ -61,11 +60,12 @@ Respond ONLY with a valid JSON object in this exact format:
       "reason": "detailed rationale for this placement"
     }
   ],
-  "clarifyingQuestions": ["question 1", "question 2"] (optional),
-  "markedUpImageUrl": "data:image/png;base64,..." (optional - only if you can generate it)
+  "clarifyingQuestions": ["question 1", "question 2"]
 }
 
-Important: Return ONLY the JSON object, no additional text or markdown formatting.`;
+The clarifyingQuestions field is optional and can be omitted if you don't need additional context.
+Do NOT include any comments, explanations, or additional fields in the JSON.
+Return ONLY valid JSON with no markdown formatting or extra text.`;
 
       let userPrompt = `I want to add the following to this UI: ${description}
 

@@ -2,10 +2,16 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles, GitCompare, X } from "lucide-react";
+import { Loader2, Sparkles, GitCompare, X, Download, FileJson, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { UploadZone } from "@/components/upload-zone";
 import { AnalysisResults } from "@/components/analysis-results";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -126,7 +132,48 @@ export default function Home() {
     setSavedAnalyses(prev => prev.filter(a => a.id !== id));
   };
 
+  const exportToJSON = () => {
+    if (!result) return;
+
+    const exportData = {
+      description: currentDescription,
+      timestamp: new Date().toISOString(),
+      analysis: result,
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ui-analysis-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Exported to JSON",
+      description: "Analysis data downloaded successfully",
+    });
+  };
+
+  const exportToPDF = () => {
+    if (!result) return;
+
+    window.print();
+
+    toast({
+      title: "Print to PDF",
+      description: "Use your browser's print dialog to save as PDF",
+    });
+  };
+
   const handleReset = () => {
+    if (originalImageUrl) {
+      URL.revokeObjectURL(originalImageUrl);
+    }
     setSelectedFile(null);
     form.reset();
     setResult(null);
@@ -225,6 +272,24 @@ export default function Home() {
                 Analysis Results
               </h2>
               <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" data-testid="button-export">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={exportToJSON} data-testid="button-export-json">
+                      <FileJson className="h-4 w-4 mr-2" />
+                      Export as JSON
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={exportToPDF} data-testid="button-export-pdf">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Export as PDF
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button
                   variant="secondary"
                   onClick={saveToComparison}

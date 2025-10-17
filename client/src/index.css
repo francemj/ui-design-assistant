@@ -355,3 +355,61 @@
     inset: -1px;
   }
 }
+
+/* Print Styles for PDF Export */
+@media print {
+  @page {
+    margin: 1cm;
+    size: A4;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  header {
+    position: static !important;
+    border-bottom: 2px solid #e5e7eb !important;
+    padding-bottom: 1rem !important;
+    margin-bottom: 2rem !important;
+  }
+
+  /* Hide UI controls when printing */
+  button,
+  [data-testid="button-export"],
+  [data-testid="button-save-to-compare"],
+  [data-testid="button-view-comparison"],
+  [data-testid="button-analyze-another"],
+  [data-testid="button-back-to-single"] {
+    display: none !important;
+  }
+
+  /* Ensure content is visible */
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Make images fit nicely on page */
+  img {
+    max-height: 400px !important;
+    page-break-inside: avoid;
+  }
+
+  /* Ensure placement cards print well */
+  [data-testid^="card-placement"] {
+    page-break-inside: avoid;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Force light theme colors for print */
+  * {
+    background: white !important;
+    border-color: #e5e7eb !important;
+  }
+
+  h1, h2, h3, p, span {
+    color: black !important;
+  }
+}

@@ -94,7 +94,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### January 2025 - Project Completion
+### January 2025 - Project Completion & Advanced Features
 - **Core Implementation**: Completed full-stack UI Placement Assistant application
   - Integrated Replit AI Integrations for OpenAI (charges to Replit credits, no API key needed)
   - Built complete frontend with upload zone (drag-and-drop), form validation (React Hook Form + Zod), and results display
@@ -116,3 +116,35 @@ Preferred communication style: Simple, everyday language.
   - Dark mode support with theme toggle
   - Responsive layout with proper spacing and typography
   - Custom elevation system for hover/active interactions
+
+### January 2025 - Advanced Features (Session-Based)
+All features use session/client-side state only (no database persistence per user requirement):
+
+- **Session-Based Comparison View**: 
+  - Save multiple analyses in current session for side-by-side comparison
+  - Grid layout displaying analyses with thumbnails, descriptions, and placement summaries
+  - Remove individual analyses from comparison
+  - Memory management with proper object URL cleanup
+  - Duplicate prevention when saving analyses
+  
+- **Export Functionality**:
+  - JSON export: Download analysis data with metadata and timestamp
+  - PDF export: Browser print dialog with optimized @media print styles
+  - Automatic cleanup of blob URLs after download
+  
+- **Keyboard Shortcuts & Accessibility**:
+  - U key: Trigger file upload
+  - Enter: Submit analysis (when not in input field)
+  - Cmd/Ctrl + Enter: Submit from anywhere (including text fields)
+  - ?: Open keyboard shortcuts help dialog
+  - Escape: Close dialogs
+  - Keyboard shortcuts button in header with help modal
+  - Global keydown event listeners with proper cleanup
+  
+- **Conversational Refinement**:
+  - AI can ask clarifying questions for better suggestions
+  - Users answer questions to refine placement recommendations
+  - Conversation history maintained and displayed in dedicated panel
+  - Backend sends conversation context with follow-up requests
+  - Multi-turn refinement supported (AI can ask multiple rounds of questions)
+  - State cleanup prevents stale answers between analyses

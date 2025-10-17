@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, AlertCircle } from "lucide-react";
 import { PlacementCard } from "./placement-card";
+import { ImageMarkupOverlay } from "./image-markup-overlay";
 import type { AnalysisResult } from "@shared/schema";
 
 interface AnalysisResultsProps {
@@ -10,54 +11,37 @@ interface AnalysisResultsProps {
 }
 
 export function AnalysisResults({ result, originalImage }: AnalysisResultsProps) {
+  const [activePlacementIndex, setActivePlacementIndex] = useState<number | null>(null);
+  
+  const hasCoordinates = result.placements.some(p => p.coordinates);
+  const missingCoordinates = result.placements.some(p => !p.coordinates);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div className="lg:sticky lg:top-8 lg:self-start">
-        <h2 className="text-xl font-semibold text-foreground mb-4" data-testid="text-visual-reference">
-          Visual Reference
-        </h2>
-        <Tabs defaultValue="original" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="original" data-testid="tab-original">
-              Original
-            </TabsTrigger>
-            <TabsTrigger
-              value="marked"
-              disabled={!result.markedUpImageUrl}
-              data-testid="tab-marked"
-            >
-              Marked-up
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="original" className="mt-4">
-            <div className="rounded-lg border border-border overflow-hidden">
-              <img
-                src={originalImage}
-                alt="Original UI screenshot"
-                className="w-full h-auto bg-muted"
-                data-testid="img-original"
-              />
-            </div>
-          </TabsContent>
-          <TabsContent value="marked" className="mt-4">
-            {result.markedUpImageUrl ? (
-              <div className="rounded-lg border border-border overflow-hidden">
-                <img
-                  src={result.markedUpImageUrl}
-                  alt="Marked-up UI screenshot"
-                  className="w-full h-auto bg-muted"
-                  data-testid="img-marked"
-                />
-              </div>
-            ) : (
-              <div className="rounded-lg border border-border p-12 text-center">
-                <p className="text-sm text-muted-foreground" data-testid="text-no-markup">
-                  No marked-up image available
-                </p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+      <div className="lg:sticky lg:top-8 lg:self-start space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground mb-4" data-testid="text-visual-reference">
+            Visual Reference
+          </h2>
+          <ImageMarkupOverlay
+            imageUrl={originalImage}
+            placements={result.placements}
+            activePlacementIndex={activePlacementIndex}
+            onPlacementHover={setActivePlacementIndex}
+          />
+        </div>
+        
+        {missingCoordinates && (
+          <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+            <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              {hasCoordinates 
+                ? "Some placement suggestions don't have visual markers. Refer to the text descriptions on the right."
+                : "Visual markers are not available for this analysis. Refer to the text descriptions on the right."
+              }
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -71,6 +55,8 @@ export function AnalysisResults({ result, originalImage }: AnalysisResultsProps)
                 key={index}
                 placement={placement}
                 index={index}
+                isActive={activePlacementIndex === index}
+                onHover={setActivePlacementIndex}
               />
             ))}
           </div>

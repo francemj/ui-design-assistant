@@ -50,22 +50,38 @@ When analyzing a UI screenshot and a user's request to add a new element:
 3. For each suggestion, provide:
    - The specific region/location (e.g., "top-right toolbar", "below the main form")
    - A clear rationale explaining why this placement works well
+   - Bounding box coordinates showing where this placement would be on the image
 4. If you need more context to give better suggestions, list 1-3 clarifying questions
+
+For coordinates, analyze the image and provide a bounding box as percentages of the image dimensions:
+- x: horizontal position from left edge (0-100%)
+- y: vertical position from top edge (0-100%)
+- width: width of the suggested area (0-100%)
+- height: height of the suggested area (0-100%)
 
 Respond ONLY with a valid JSON object in this exact format:
 {
   "placements": [
     {
       "region": "specific location description",
-      "reason": "detailed rationale for this placement"
+      "reason": "detailed rationale for this placement",
+      "coordinates": {
+        "x": 10.5,
+        "y": 20.0,
+        "width": 30.0,
+        "height": 15.0
+      }
     }
   ],
   "clarifyingQuestions": ["question 1", "question 2"]
 }
 
-The clarifyingQuestions field is optional and can be omitted if you don't need additional context.
-Do NOT include any comments, explanations, or additional fields in the JSON.
-Return ONLY valid JSON with no markdown formatting or extra text.`;
+IMPORTANT:
+- Always include coordinates for every placement suggestion
+- Coordinates are percentages (0-100) of the original image dimensions
+- The clarifyingQuestions field is optional and can be omitted if you don't need additional context
+- Do NOT include any comments, explanations, or additional fields in the JSON
+- Return ONLY valid JSON with no markdown formatting or extra text`;
 
       let userPrompt = `I want to add the following to this UI: ${description}
 

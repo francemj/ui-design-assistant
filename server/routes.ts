@@ -35,8 +35,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Description is required" });
       }
 
-      const conversationHistory = req.body.conversationHistory 
-        ? JSON.parse(req.body.conversationHistory) 
+      const conversationHistory = req.body.conversationHistory
+        ? JSON.parse(req.body.conversationHistory)
         : [];
 
       // Validate buffer exists and has content
@@ -131,16 +131,13 @@ Please analyze the layout and suggest the best placement options.`;
             content: `Answer: ${turn.answer}`,
           });
         }
-        
+
         messages.push({
           role: "user",
           content: "Based on my answers to your questions, please provide updated placement suggestions.",
         });
       }
 
-      // Using Replit AI Integrations - using minimal parameters to avoid proxy issues
-      console.log("Sending request to GPT-4o with", messages.length, "messages");
-      
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages,
@@ -151,7 +148,7 @@ Please analyze the layout and suggest the best placement options.`;
 
       const content = response.choices[0]?.message?.content;
       console.log("Extracted content:", content);
-      
+
       if (!content) {
         console.error("No content in response. Full response:", JSON.stringify(response));
         return res.status(500).json({ message: "No response from AI" });
@@ -160,7 +157,7 @@ Please analyze the layout and suggest the best placement options.`;
       let parsedContent;
       try {
         let jsonString = content.trim();
-        
+
         if (jsonString.startsWith("```")) {
           const jsonMatch = jsonString.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
           if (jsonMatch) {
@@ -172,14 +169,14 @@ Please analyze the layout and suggest the best placement options.`;
             jsonString = jsonMatch[0];
           }
         }
-        
+
         parsedContent = JSON.parse(jsonString);
       } catch (parseError) {
         console.error("JSON parsing failed for AI response:", content);
         console.error("Parse error:", parseError);
-        return res.status(500).json({ 
+        return res.status(500).json({
           message: "Failed to parse AI response as JSON",
-          details: content 
+          details: content
         });
       }
 
@@ -189,19 +186,19 @@ Please analyze the layout and suggest the best placement options.`;
       } catch (validationError) {
         console.error("Zod validation failed:", validationError);
         console.error("Parsed content:", JSON.stringify(parsedContent, null, 2));
-        return res.status(500).json({ 
+        return res.status(500).json({
           message: "AI response did not match expected schema",
-          details: validationError 
+          details: validationError
         });
       }
 
       res.json(validatedResult);
     } catch (error) {
       console.error("Analysis error:", error);
-      
+
       if (error instanceof Error) {
-        res.status(500).json({ 
-          message: error.message || "Analysis failed" 
+        res.status(500).json({
+          message: error.message || "Analysis failed"
         });
       } else {
         res.status(500).json({ message: "An unknown error occurred" });

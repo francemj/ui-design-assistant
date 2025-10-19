@@ -1,5 +1,4 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin } from "lucide-react";
 import type { Placement } from "@shared/schema";
 
 interface PlacementCardProps {
@@ -21,7 +20,7 @@ export function PlacementCard({ placement, index, isActive = false, onHover }: P
   const hasCoordinates = !!placement.coordinates;
 
   return (
-    <Card 
+    <Card
       className={`hover-elevate transition-all ${isActive ? 'ring-2' : ''}`}
       style={isActive ? { '--tw-ring-color': color } as React.CSSProperties : {}}
       data-testid={`card-placement-${index}`}
@@ -30,7 +29,7 @@ export function PlacementCard({ placement, index, isActive = false, onHover }: P
     >
       <CardContent className="p-6">
         <div className="flex items-start gap-3">
-          <div 
+          <div
             className="mt-1 flex items-center justify-center w-8 h-8 rounded-md font-semibold text-white text-sm"
             style={{ backgroundColor: color }}
           >

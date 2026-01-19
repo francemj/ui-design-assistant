@@ -1,28 +1,29 @@
-import { Card, CardContent } from "@/components/ui/card";
-import type { Placement } from "@shared/schema";
+import { Card, CardContent } from "@/components/ui/card"
+import type { Placement } from "@shared/schema"
+import { PLACEMENT_COLORS } from "@shared/placement-colors"
 
 interface PlacementCardProps {
-  placement: Placement;
-  index: number;
-  isActive?: boolean;
-  onHover?: (index: number | null) => void;
+  placement: Placement
+  index: number
+  isActive?: boolean
+  onHover?: (index: number | null) => void
 }
 
-const COLORS = [
-  "rgb(59, 130, 246)",  // blue
-  "rgb(168, 85, 247)",  // purple
-  "rgb(236, 72, 153)",  // pink
-  "rgb(34, 197, 94)",   // green
-];
-
-export function PlacementCard({ placement, index, isActive = false, onHover }: PlacementCardProps) {
-  const color = COLORS[index % COLORS.length];
-  const hasCoordinates = !!placement.coordinates;
+export function PlacementCard({
+  placement,
+  index,
+  isActive = false,
+  onHover,
+}: PlacementCardProps) {
+  const color = PLACEMENT_COLORS[index % PLACEMENT_COLORS.length]
+  const hasCoordinates = !!placement.coordinates
 
   return (
     <Card
-      className={`hover-elevate transition-all ${isActive ? 'ring-2' : ''}`}
-      style={isActive ? { '--tw-ring-color': color } as React.CSSProperties : {}}
+      className={`hover-elevate transition-all ${isActive ? "ring-2" : ""}`}
+      style={
+        isActive ? ({ "--tw-ring-color": color } as React.CSSProperties) : {}
+      }
       data-testid={`card-placement-${index}`}
       onMouseEnter={() => hasCoordinates && onHover?.(index)}
       onMouseLeave={() => hasCoordinates && onHover?.(null)}
@@ -52,5 +53,5 @@ export function PlacementCard({ placement, index, isActive = false, onHover }: P
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }

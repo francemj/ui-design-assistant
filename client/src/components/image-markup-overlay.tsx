@@ -1,19 +1,13 @@
-import { useState, useRef, useEffect } from "react";
-import type { Placement } from "@shared/schema";
+import { useState, useRef, useEffect } from "react"
+import type { Placement } from "@shared/schema"
+import { PLACEMENT_COLORS } from "@shared/placement-colors"
 
 interface ImageMarkupOverlayProps {
-  imageUrl: string;
-  placements: Placement[];
-  activePlacementIndex: number | null;
-  onPlacementHover: (index: number | null) => void;
+  imageUrl: string
+  placements: Placement[]
+  activePlacementIndex: number | null
+  onPlacementHover: (index: number | null) => void
 }
-
-const COLORS = [
-  "rgb(59, 130, 246)",  // blue
-  "rgb(168, 85, 247)",  // purple
-  "rgb(236, 72, 153)",  // pink
-  "rgb(34, 197, 94)",   // green
-];
 
 export function ImageMarkupOverlay({
   imageUrl,
@@ -21,9 +15,12 @@ export function ImageMarkupOverlay({
   activePlacementIndex,
   onPlacementHover,
 }: ImageMarkupOverlayProps) {
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
-  const imgRef = useRef<HTMLImageElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [imageDimensions, setImageDimensions] = useState({
+    width: 0,
+    height: 0,
+  })
+  const imgRef = useRef<HTMLImageElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -31,30 +28,30 @@ export function ImageMarkupOverlay({
         setImageDimensions({
           width: imgRef.current.clientWidth,
           height: imgRef.current.clientHeight,
-        });
-      }
-    };
-
-    const img = imgRef.current;
-    if (img) {
-      if (img.complete) {
-        updateDimensions();
-      } else {
-        img.addEventListener("load", updateDimensions);
+        })
       }
     }
 
-    window.addEventListener("resize", updateDimensions);
+    const img = imgRef.current
+    if (img) {
+      if (img.complete) {
+        updateDimensions()
+      } else {
+        img.addEventListener("load", updateDimensions)
+      }
+    }
+
+    window.addEventListener("resize", updateDimensions)
 
     return () => {
-      window.removeEventListener("resize", updateDimensions);
+      window.removeEventListener("resize", updateDimensions)
       if (img) {
-        img.removeEventListener("load", updateDimensions);
+        img.removeEventListener("load", updateDimensions)
       }
-    };
-  }, [imageUrl]);
+    }
+  }, [imageUrl])
 
-  const placementsWithCoordinates = placements.filter(p => p.coordinates);
+  const placementsWithCoordinates = placements.filter((p) => p.coordinates)
 
   return (
     <div ref={containerRef} className="relative inline-block w-full">
@@ -65,25 +62,29 @@ export function ImageMarkupOverlay({
         className="w-full h-auto rounded-lg border border-border"
         data-testid="img-markup-original"
       />
-      
+
       {imageDimensions.width > 0 && placementsWithCoordinates.length > 0 && (
         <svg
           className="absolute top-0 left-0 w-full h-full"
           viewBox={`0 0 ${imageDimensions.width} ${imageDimensions.height}`}
           data-testid="svg-markup-overlay"
         >
-          {placementsWithCoordinates.map((placement, index) => {
-            if (!placement.coordinates) return null;
+          {placementsWithCoordinates.map((placement) => {
+            if (!placement.coordinates) return null
 
-            const actualIndex = placements.indexOf(placement);
-            const color = COLORS[actualIndex % COLORS.length];
-            const isActive = activePlacementIndex === actualIndex;
-            const opacity = activePlacementIndex === null || isActive ? 0.3 : 0.1;
+            const actualIndex = placements.indexOf(placement)
+            const color =
+              PLACEMENT_COLORS[actualIndex % PLACEMENT_COLORS.length]
+            const isActive = activePlacementIndex === actualIndex
+            const opacity =
+              activePlacementIndex === null || isActive ? 0.3 : 0.1
 
-            const x = (placement.coordinates.x / 100) * imageDimensions.width;
-            const y = (placement.coordinates.y / 100) * imageDimensions.height;
-            const width = (placement.coordinates.width / 100) * imageDimensions.width;
-            const height = (placement.coordinates.height / 100) * imageDimensions.height;
+            const x = (placement.coordinates.x / 100) * imageDimensions.width
+            const y = (placement.coordinates.y / 100) * imageDimensions.height
+            const width =
+              (placement.coordinates.width / 100) * imageDimensions.width
+            const height =
+              (placement.coordinates.height / 100) * imageDimensions.height
 
             return (
               <g key={actualIndex}>
@@ -124,10 +125,10 @@ export function ImageMarkupOverlay({
                   {actualIndex + 1}
                 </text>
               </g>
-            );
+            )
           })}
         </svg>
       )}
     </div>
-  );
+  )
 }
